@@ -1,5 +1,14 @@
 # Import necessary libraries
 import os, glob, math, time, sys, socket, psutil
+from gpiozero import LED
+
+# Set-up LEDs
+led_red = LED(17)
+led_yellow = LED(27)
+led_green = LED(22)
+led_blue = LED(10)
+
+led_blue.on()
 
 # Try to set-up Scroll pHAT, set flag if not available
 try:
