@@ -75,6 +75,14 @@ try:
 except:
 	scrollphat_connected = False
 
+try:
+	import Adafruit_BMP.BMP085 as BMP085
+	BMP = BMP085.BMP085()
+	bmp_sensor_okay = True
+except:
+	print("BMP sensor not working")
+	bmp_sensor_okay = False
+
 # Try to connect to network and get IP. If not connected, set flag
 try:
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -162,6 +170,12 @@ while True:
 	# Get operating system 'pretty name' and display it
 	os_info = get_operating_system_information()
 	display("OS: " + os_info)
+
+	if bmp_sensor_okay:
+		display("BMP temp = {0:0.2f} *C".format(BMP.read_temperature()))
+		display("Pressure = {0:0.2f} Pa".format(BMP.read_pressure()))
+		display("Altitude = {0:0.2f} m".format(BMP.read_altitude()))
+		display("Sealevel Pressure = {0:0.2f} Pa".format(BMP.read_sealevel_pressure()))
 
 	# Display time if network is connected
 	if network_connected:
