@@ -1,6 +1,6 @@
 # Import necessary libraries
 import os, glob, math, time, sys, socket, psutil, threading, random
-from gpiozero import LED
+from gpiozero import LED, PWMLED
 
 def get_operating_system_information():
 	os_file = '/etc/os-release'
@@ -15,10 +15,27 @@ def get_operating_system_information():
 	return info
 
 # Set-up LEDs
-led_red = LED(17)
-led_yellow = LED(27)
-led_green = LED(22)
-led_blue = LED(10)
+led_red = PWMLED(17)
+led_yellow = PWMLED(27)
+led_green = PWMLED(22)
+led_blue = PWMLED(10)
+
+# Helper function to iterate over a float
+def frange(start, stop, step):
+	i = start
+	
+	if (start < stop):
+		while i <= stop:
+			yield i
+			i += step
+			# For some reason, += doesn't always add an exact decimal, so we have to round the value
+			i = round(i, 1)
+	else:
+		while i >= stop:
+			yield i
+			i += step
+			# For some reason, += doesn't always add an exact decimal, so we have to round the value
+			i = round(i, 1)
 
 class RandomLEDs(threading.Thread):
 	def __init__(self, threadID, name):
@@ -30,10 +47,25 @@ class RandomLEDs(threading.Thread):
 		while True:
 			led_list = [led_blue,led_yellow,led_green,led_red]
 			the_led = random.choice(led_list)
-			the_led.on()
-			time.sleep(0.1)
-			the_led.off()
-			time.sleep(0.1)
+			#the_led.on()
+			#time.sleep(0.1)
+			#the_led.off()
+			#time.sleep(0.1)
+			self.fade_in_led(the_led, 0.03)
+			time.sleep(0.3)
+			self.fade_out_led(the_led, 0.02)
+			time.sleep(0.3)
+
+	# PWM the LED value from 0 to 1 (or from 1 to 0) with a 0.1 step
+	def fade_in_led(self, led, speed):
+		for i in frange(0.0, 1.0, 0.1):
+			led.value = i
+			time.sleep(speed)
+
+	def fade_out_led(self, led, speed):
+		for i in frange(1.0, 0.0, -0.1):
+			led.value = i
+			time.sleep(speed)
 
 # Try to set-up Scroll pHAT, set flag if not available
 try:
@@ -68,12 +100,14 @@ try:
 except:
 	ext_temperature_connected = False
 
+# Read the raw temperature device file (1-wire)
 def read_temp_raw():
 	f = open(device_file, "r")
 	lines = f.readlines()
 	f.close()
 	return lines
 
+# Convert the raw temp to something understandable (1-wire)
 def read_temp():
 	try:
 		lines = read_temp_raw()
@@ -94,6 +128,7 @@ def read_temp():
 	except:
 		return -1.0,-1.0
 
+# If the Scroll pHAT is connected, scroll the message. If it's not, display to screen
 def display(message):
 	if scrollphat_connected:
 		scrollphat.clear()
@@ -105,6 +140,7 @@ def display(message):
 		print(message)
 		time.sleep(0.1)
 
+# Get the CPU temperature by issuing a system command and mining the response
 def get_system_temperature():
 	f = os.popen("/opt/vc/bin/vcgencmd measure_temp")
 	mytemp = ""
@@ -117,8 +153,8 @@ def get_system_temperature():
 	return firstchar + secondchar + "." + thirdchar + " C"
 
 # Start independent threads
+# This one lights up a random LED
 thread1 = RandomLEDs(1, "Thread-1")
-
 thread1.start()
 
 # Main loop
@@ -143,9 +179,9 @@ while True:
 	# Get system temperature and display
 	display("Sys temp: " + get_system_temperature())
 
+	# Get temperature from the 1-wire sensor (if connected) and display it
 	if ext_temperature_connected:
 		temperature_c, temperature_f = read_temp()
 		display("Ext temp: " + str(temperature_c) + " C / " + str(temperature_f) + " F")
 		time.sleep(1)
 
-sys.exit()
