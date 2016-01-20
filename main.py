@@ -1,6 +1,18 @@
 # Import necessary libraries
-import os, glob, math, time, sys, socket, psutil
+import os, glob, math, time, sys, socket, psutil, threading, random
 from gpiozero import LED
+
+def get_operating_system_information():
+	os_file = '/etc/os-release'
+
+	f = open(os_file, "r")
+	lines = f.readlines()
+	f.close()
+	
+	info = lines[0][13:].strip()
+	info = info[:len(info)-1]
+
+	return info
 
 # Set-up LEDs
 led_red = LED(17)
@@ -8,7 +20,20 @@ led_yellow = LED(27)
 led_green = LED(22)
 led_blue = LED(10)
 
-led_blue.on()
+class RandomLEDs(threading.Thread):
+	def __init__(self, threadID, name):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.name = name
+
+	def run(self):
+		while True:
+			led_list = [led_blue,led_yellow,led_green,led_red]
+			the_led = random.choice(led_list)
+			the_led.on()
+			time.sleep(0.1)
+			the_led.off()
+			time.sleep(0.1)
 
 # Try to set-up Scroll pHAT, set flag if not available
 try:
@@ -91,13 +116,23 @@ def get_system_temperature():
 
 	return firstchar + secondchar + "." + thirdchar + " C"
 
+# Start independent threads
+thread1 = RandomLEDs(1, "Thread-1")
+
+thread1.start()
+
+# Main loop
 while True:
+	# Get operating system 'pretty name' and display it
+	os_info = get_operating_system_information()
+	display("OS: " + os_info)
+
 	# Display time if network is connected
 	if network_connected:
 		f = os.popen("date")
 		for i in f.readlines():
 			mytime = i[11:-13]
-		display("Date: " + mytime)
+		display("Time: " + mytime)
 
 	# Display IP if network is connected
 	if network_connected:
