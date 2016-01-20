@@ -130,6 +130,8 @@ def read_temp():
 
 # If the Scroll pHAT is connected, scroll the message. If it's not, display to screen
 def display(message):
+	scrollphat_connected = False
+	scrollphat.clear()
 	if scrollphat_connected:
 		scrollphat.clear()
 		scrollphat.write_string(message + "       ", 11)
