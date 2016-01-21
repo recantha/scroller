@@ -47,14 +47,10 @@ class RandomLEDs(threading.Thread):
 		while True:
 			led_list = [led_blue,led_yellow,led_green,led_red]
 			the_led = random.choice(led_list)
-			#the_led.on()
-			#time.sleep(0.1)
-			#the_led.off()
-			#time.sleep(0.1)
 			self.fade_in_led(the_led, 0.03)
-			time.sleep(0.3)
-			self.fade_out_led(the_led, 0.02)
-			time.sleep(0.3)
+			time.sleep(0.2)
+			self.fade_out_led(the_led, 0.04)
+			time.sleep(0.2)
 
 	# PWM the LED value from 0 to 1 (or from 1 to 0) with a 0.1 step
 	def fade_in_led(self, led, speed):
@@ -70,7 +66,7 @@ class RandomLEDs(threading.Thread):
 # Try to set-up Scroll pHAT, set flag if not available
 try:
 	import scrollphat
-	scrollphat.set_brightness(30)
+	scrollphat.set_brightness(5)
 	scrollphat_connected = True
 except:
 	scrollphat_connected = False
